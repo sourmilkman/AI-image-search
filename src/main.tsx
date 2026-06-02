@@ -5,6 +5,7 @@ import {
   AlertCircle,
   CheckCircle2,
   Database,
+  Trash2,
   FolderPlus,
   HardDrive,
   Image as ImageIcon,
@@ -145,6 +146,18 @@ function App() {
       } else {
         setNotice(message);
       }
+    }
+  }
+
+  async function deleteFolder(folder: Folder) {
+    const confirmed = window.confirm(`Remove this storage folder from the index?\n\n${folder.path}`);
+    if (!confirmed) return;
+    try {
+      await api(`/api/folders/${folder.id}`, { method: 'DELETE' });
+      setNotice('');
+      await refresh();
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'Could not delete folder.');
     }
   }
 
@@ -294,7 +307,14 @@ function App() {
             {folders.length === 0 ? (
               <p className="muted">No storage folders added yet.</p>
             ) : (
-              folders.map((folder) => <div key={folder.id} className="folder-row" title={folder.path}>{folder.path}</div>)
+              folders.map((folder) => (
+                <div key={folder.id} className="folder-row" title={folder.path}>
+                  <span>{folder.path}</span>
+                  <button className="folder-delete" type="button" onClick={() => deleteFolder(folder)} title="Delete storage folder">
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              ))
             )}
           </div>
         </section>

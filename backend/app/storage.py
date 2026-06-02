@@ -67,6 +67,20 @@ class Store:
             row = db.execute("SELECT * FROM folders WHERE path = ?", (resolved,)).fetchone()
             return dict(row)
 
+    def delete_folder(self, folder_id: int) -> dict[str, Any] | None:
+        with self._lock, self.connect() as db:
+            folder = db.execute("SELECT * FROM folders WHERE id = ?", (folder_id,)).fetchone()
+            if not folder:
+                return None
+            images = db.execute("SELECT id FROM images WHERE folder_id = ?", (folder_id,)).fetchall()
+            for image in images:
+                thumbnail = self.thumbnail_path(int(image["id"]))
+                if thumbnail.exists():
+                    thumbnail.unlink()
+            db.execute("DELETE FROM images WHERE folder_id = ?", (folder_id,))
+            db.execute("DELETE FROM folders WHERE id = ?", (folder_id,))
+            return {"folder": dict(folder), "removed_images": len(images)}
+
     def image_count(self) -> int:
         with self.connect() as db:
             row = db.execute("SELECT COUNT(*) AS count FROM images").fetchone()

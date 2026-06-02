@@ -73,6 +73,14 @@ def add_folder(request: FolderRequest) -> dict[str, Any]:
     return {"folder": store.add_folder(path)}
 
 
+@app.delete("/api/folders/{folder_id}")
+def delete_folder(folder_id: int) -> dict[str, Any]:
+    deleted = store.delete_folder(folder_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Folder not found")
+    return deleted
+
+
 @app.post("/api/folders/pick")
 def pick_folder() -> dict[str, Any]:
     try:

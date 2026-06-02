@@ -213,14 +213,37 @@ input:focus {
 }
 
 .folder-row {
-  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 32px;
+  align-items: center;
+  gap: 8px;
   padding: 10px;
   border-radius: 8px;
   color: #37403d;
   background: #f0eee8;
   font-size: 13px;
+}
+
+.folder-row span {
+  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.folder-delete {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid #d7d3ca;
+  border-radius: 8px;
+  color: #7a3126;
+  background: #fffdfa;
+}
+
+.folder-delete:hover {
+  border-color: #edc8bb;
+  background: #fff0eb;
 }
 
 .metric-row {
