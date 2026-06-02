@@ -54,6 +54,7 @@ def health() -> dict[str, Any]:
         "index": store.index_summary(),
         "capabilities": {
             "folder_picker": True,
+            "folder_delete": True,
             "open_image": True,
             "reveal_image": True,
         },

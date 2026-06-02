@@ -26,7 +26,7 @@ type Health = {
   app_version: string;
   model: { name: string; version: string; dimensions: number; mode: string; fallback_reason?: string };
   index: { folders: number; images: number; last_indexed_at: string | null };
-  capabilities?: { folder_picker?: boolean; open_image?: boolean; reveal_image?: boolean };
+  capabilities?: { folder_picker?: boolean; folder_delete?: boolean; open_image?: boolean; reveal_image?: boolean };
 };
 
 type Folder = { id: number; path: string; added_at: string };
@@ -150,6 +150,10 @@ function App() {
   }
 
   async function deleteFolder(folder: Folder) {
+    if (!health?.capabilities?.folder_delete) {
+      setNotice('Folder deletion is not available in the running backend. Restart the local backend with the latest code.');
+      return;
+    }
     const confirmed = window.confirm(`Remove this storage folder from the index?\n\n${folder.path}`);
     if (!confirmed) return;
     try {

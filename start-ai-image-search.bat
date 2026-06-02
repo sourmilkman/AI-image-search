@@ -11,6 +11,10 @@ set "BACKEND_HOST=0.0.0.0"
 echo Starting Local AI Image Search...
 echo.
 
+echo Stopping any old app services on ports 8765 and %FRONTEND_PORT%...
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Get-NetTCPConnection -LocalPort 8765,%FRONTEND_PORT% -State Listen -ErrorAction SilentlyContinue | Select-Object -ExpandProperty OwningProcess -Unique | ForEach-Object { Stop-Process -Id $_ -Force -ErrorAction SilentlyContinue }"
+timeout /t 1 /nobreak >nul
+
 call :find_python
 if errorlevel 1 (
   echo Could not find Python 3.11, 3.12, or 3.13.
