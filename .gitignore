@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.vite/
+backend/.venv/
+backend/__pycache__/
+backend/app/__pycache__/
+*.pyc
+.pytest_cache/
+qa-screenshots/
