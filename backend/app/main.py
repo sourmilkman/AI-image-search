@@ -68,6 +68,25 @@ def add_folder(request: FolderRequest) -> dict[str, Any]:
     return {"folder": store.add_folder(path)}
 
 
+@app.post("/api/folders/pick")
+def pick_folder() -> dict[str, Any]:
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Folder picker is unavailable: {exc}") from exc
+
+    root = tk.Tk()
+    root.withdraw()
+    root.attributes("-topmost", True)
+    selected = filedialog.askdirectory(title="Select a folder to search")
+    root.destroy()
+    if not selected:
+        return {"folder": None}
+    folder = store.add_folder(Path(selected))
+    return {"folder": folder}
+
+
 @app.post("/api/index")
 def start_indexing() -> dict[str, Any]:
     return {"status": indexer.start()}

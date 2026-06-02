@@ -7,6 +7,7 @@ The frontend can be hosted from GitHub Pages or another static repo host. The Py
 ## What It Does
 
 - Adds explicit local folders that you choose.
+- Lets you browse for storage folders from the UI when the local backend is running.
 - Indexes image files and creates local thumbnails.
 - Searches indexed images from natural-language prompts using a local CLIP model when installed.
 - Shows real search progress stages in the UI.
@@ -36,6 +37,8 @@ http://YOUR-PC-LAN-IP:8765
 ```
 
 On Windows, you may need to allow Python through the firewall when prompted.
+
+The **Browse Folder** button opens a native folder picker on the PC running the backend. If you use the Pages PWA from a phone, the picker opens on the PC, not on the phone, because the searchable folders live on the PC.
 
 ## Manual Startup
 

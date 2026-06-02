@@ -122,6 +122,20 @@ function App() {
     }
   }
 
+  async function browseFolder() {
+    try {
+      const response = await api<{ folder: Folder | null }>('/api/folders/pick', { method: 'POST' });
+      if (response.folder) {
+        setNotice('');
+        await refresh();
+      } else {
+        setNotice('Folder selection was cancelled.');
+      }
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'Could not open folder picker.');
+    }
+  }
+
   async function startIndexing() {
     try {
       await api('/api/index', { method: 'POST' });
@@ -246,7 +260,7 @@ function App() {
         <section className="panel">
           <div className="panel-title">
             <FolderPlus size={16} />
-            <span>Folders</span>
+            <span>Storage</span>
           </div>
           <form onSubmit={addFolder} className="stack">
             <input
@@ -255,14 +269,18 @@ function App() {
               placeholder="G:\\Photos\\Family"
               aria-label="Folder path"
             />
+            <button className="primary" type="button" onClick={browseFolder} disabled={!connected}>
+              <FolderOpen size={17} />
+              Browse Folder
+            </button>
             <button className="primary subtle" type="submit">
               <FolderPlus size={17} />
-              Add Folder
+              Add Typed Path
             </button>
           </form>
           <div className="folder-list">
             {folders.length === 0 ? (
-              <p className="muted">No folders added yet.</p>
+              <p className="muted">No storage folders added yet.</p>
             ) : (
               folders.map((folder) => <div key={folder.id} className="folder-row" title={folder.path}>{folder.path}</div>)
             )}
