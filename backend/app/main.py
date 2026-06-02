@@ -18,7 +18,7 @@ from .model import LocalImageModel
 from .storage import Store
 
 
-APP_VERSION = "0.1.0"
+APP_VERSION = "0.2.0"
 DATA_DIR = Path(os.environ.get("IMAGE_SEARCH_DATA_DIR", Path.home() / ".local-ai-image-search"))
 
 store = Store(DATA_DIR)
