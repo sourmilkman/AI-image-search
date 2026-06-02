@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 import threading
 from pathlib import Path
+from collections.abc import Iterator
 from typing import Any
 
 import numpy as np
@@ -87,16 +89,19 @@ class Store:
             return int(row["count"])
 
     def folder_image_paths(self) -> list[tuple[int, Path]]:
+        return list(self.iter_folder_image_paths())
+
+    def iter_folder_image_paths(self) -> Iterator[tuple[int, Path]]:
         folders = self.list_folders()
-        discovered: list[tuple[int, Path]] = []
         for folder in folders:
             root = Path(folder["path"])
             if not root.exists():
                 continue
-            for path in root.rglob("*"):
-                if path.is_file() and path.suffix.lower() in IMAGE_EXTENSIONS:
-                    discovered.append((int(folder["id"]), path))
-        return discovered
+            for current_root, _dirs, files in os.walk(root, onerror=lambda _error: None):
+                for filename in files:
+                    path = Path(current_root) / filename
+                    if path.suffix.lower() in IMAGE_EXTENSIONS:
+                        yield (int(folder["id"]), path)
 
     def existing_image(self, path: Path) -> sqlite3.Row | None:
         with self.connect() as db:

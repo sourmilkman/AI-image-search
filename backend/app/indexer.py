@@ -44,67 +44,72 @@ class Indexer:
             self.status.update(updates)
 
     def _run(self) -> None:
-        paths = self.store.folder_image_paths()
         self._set(
             running=True,
             stage="discovering",
             processed=0,
-            total=len(paths),
+            total=0,
             indexed=0,
             skipped=0,
             errors=0,
-            message=f"Found {len(paths)} image files",
+            message="Discovering image files",
         )
-        present = {str(path) for _, path in paths}
-        self.store.remove_missing(present)
+        try:
+            indexed = 0
+            skipped = 0
+            errors = 0
+            processed = 0
+            for processed, (folder_id, path) in enumerate(self.store.iter_folder_image_paths(), start=1):
+                try:
+                    stat = path.stat()
+                    existing = self.store.existing_image(path)
+                    model_matches = (
+                        existing
+                        and existing["model_name"] == self.model.name
+                        and existing["model_version"] == self.model.version
+                    )
+                    file_unchanged = existing and int(existing["size"]) == stat.st_size and float(existing["modified"]) == stat.st_mtime
+                    if existing and file_unchanged and model_matches:
+                        skipped += 1
+                        self._set(stage="skipping", processed=processed, total=processed, skipped=skipped, message=f"Skipped {path.name}")
+                        continue
+                    self._set(stage="embedding", processed=processed, total=processed, message=f"Indexing {path.name}")
+                    embedding = self.model.embed_image(path)
+                    width, height = image_dimensions(path)
+                    image_id = self.store.upsert_image(
+                        folder_id,
+                        path,
+                        stat.st_size,
+                        stat.st_mtime,
+                        width,
+                        height,
+                        embedding,
+                        self.model.name,
+                        self.model.version,
+                    )
+                    make_thumbnail(path, self.store.thumbnail_path(image_id))
+                    indexed += 1
+                    self._set(indexed=indexed)
+                except Exception:
+                    errors += 1
+                    self._set(errors=errors, message=f"Could not index {path.name}")
 
-        indexed = 0
-        skipped = 0
-        errors = 0
-        for processed, (folder_id, path) in enumerate(paths, start=1):
-            try:
-                stat = path.stat()
-                existing = self.store.existing_image(path)
-                model_matches = (
-                    existing
-                    and existing["model_name"] == self.model.name
-                    and existing["model_version"] == self.model.version
-                )
-                file_unchanged = existing and int(existing["size"]) == stat.st_size and float(existing["modified"]) == stat.st_mtime
-                if existing and file_unchanged and model_matches:
-                    skipped += 1
-                    self._set(stage="skipping", processed=processed, skipped=skipped, message=f"Skipped {path.name}")
-                    continue
-                self._set(stage="embedding", processed=processed, message=f"Indexing {path.name}")
-                embedding = self.model.embed_image(path)
-                width, height = image_dimensions(path)
-                image_id = self.store.upsert_image(
-                    folder_id,
-                    path,
-                    stat.st_size,
-                    stat.st_mtime,
-                    width,
-                    height,
-                    embedding,
-                    self.model.name,
-                    self.model.version,
-                )
-                make_thumbnail(path, self.store.thumbnail_path(image_id))
-                indexed += 1
-                self._set(indexed=indexed)
-            except Exception:
-                errors += 1
-                self._set(errors=errors, message=f"Could not index {path.name}")
-
-        self._set(
-            running=False,
-            stage="complete",
-            processed=len(paths),
-            indexed=indexed,
-            skipped=skipped,
-            errors=errors,
-            message=f"Indexed {indexed}, skipped {skipped}, errors {errors}",
-        )
+            self._set(
+                running=False,
+                stage="complete",
+                processed=processed,
+                total=processed,
+                indexed=indexed,
+                skipped=skipped,
+                errors=errors,
+                message=f"Indexed {indexed}, skipped {skipped}, errors {errors}",
+            )
+        except Exception as exc:
+            self._set(
+                running=False,
+                stage="error",
+                message=f"Indexing failed during discovery: {exc}",
+            )
 
 
 def image_dimensions(path: Path) -> tuple[int, int]:
