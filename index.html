@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#101820" />
     <title>Local AI Image Search</title>
+    <script>
+      window.addEventListener('DOMContentLoaded', function () {
+        var isGithubPages = location.hostname.endsWith('github.io');
+        var isRawDevEntry = Boolean(document.querySelector('script[src="/src/main.tsx"]'));
+        if (isGithubPages && isRawDevEntry) {
+          location.replace(new URL('dist/', location.href).href);
+        }
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>
