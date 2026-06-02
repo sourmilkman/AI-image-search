@@ -25,6 +25,7 @@ type Health = {
   app_version: string;
   model: { name: string; version: string; dimensions: number; mode: string; fallback_reason?: string };
   index: { folders: number; images: number; last_indexed_at: string | null };
+  capabilities?: { folder_picker?: boolean; open_image?: boolean; reveal_image?: boolean };
 };
 
 type Folder = { id: number; path: string; added_at: string };
@@ -88,7 +89,13 @@ function App() {
     });
     if (!response.ok) {
       const text = await response.text();
-      throw new Error(text || response.statusText);
+      let detail = text || response.statusText;
+      try {
+        detail = JSON.parse(text).detail || detail;
+      } catch {
+        // Keep the original response text when it is not JSON.
+      }
+      throw new Error(detail);
     }
     return response.json() as Promise<T>;
   }
@@ -132,7 +139,12 @@ function App() {
         setNotice('Folder selection was cancelled.');
       }
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : 'Could not open folder picker.');
+      const message = error instanceof Error ? error.message : 'Could not open folder picker.';
+      if (message.includes('Not Found') || message.includes('404')) {
+        setNotice('Folder picker is not available in the running backend. Restart the local backend with the latest code.');
+      } else {
+        setNotice(message);
+      }
     }
   }
 

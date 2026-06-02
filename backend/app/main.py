@@ -52,6 +52,11 @@ def health() -> dict[str, Any]:
         "backend": "FastAPI",
         "model": model.descriptor,
         "index": store.index_summary(),
+        "capabilities": {
+            "folder_picker": True,
+            "open_image": True,
+            "reveal_image": True,
+        },
     }
 
 

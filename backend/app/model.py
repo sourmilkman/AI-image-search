@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import math
 import os
 from pathlib import Path
@@ -29,23 +30,30 @@ class LocalImageModel:
     def __init__(self) -> None:
         self._clip_loaded = False
         self._clip_failed_reason: str | None = None
+        self._clip_preferred = os.environ.get("IMAGE_SEARCH_MODEL", "clip").lower() != "fallback"
         self._processor = None
         self._model = None
         self._torch = None
-        if os.environ.get("IMAGE_SEARCH_MODEL", "clip").lower() != "fallback":
-            self._try_load_clip()
+        if self._clip_preferred and not self._clip_dependencies_available():
+            self._clip_failed_reason = "CLIP unavailable: install backend/requirements-ai.txt"
 
     @property
     def name(self) -> str:
-        return f"clip:{CLIP_MODEL_ID}" if self._clip_loaded else self.fallback_name
+        if self._clip_preferred and not self._clip_failed_reason:
+            return f"clip:{CLIP_MODEL_ID}"
+        return self.fallback_name
 
     @property
     def version(self) -> str:
-        return "1.0.0" if self._clip_loaded else self.fallback_version
+        if self._clip_preferred and not self._clip_failed_reason:
+            return "1.0.0"
+        return self.fallback_version
 
     @property
     def dimensions(self) -> int:
-        return 512 if self._clip_loaded else FALLBACK_EMBEDDING_DIMENSIONS
+        if self._clip_preferred and not self._clip_failed_reason:
+            return 512
+        return FALLBACK_EMBEDDING_DIMENSIONS
 
     @property
     def descriptor(self) -> dict[str, str | int]:
@@ -60,14 +68,27 @@ class LocalImageModel:
         return descriptor
 
     def embed_image(self, image_path: Path) -> np.ndarray:
-        if self._clip_loaded:
+        if self._ensure_clip_loaded():
             return self._embed_clip_image(image_path)
         return self._embed_fallback_image(image_path)
 
     def embed_text(self, query: str) -> np.ndarray:
-        if self._clip_loaded:
+        if self._ensure_clip_loaded():
             return self._embed_clip_text(query)
         return self._embed_fallback_text(query)
+
+    def _clip_dependencies_available(self) -> bool:
+        return importlib.util.find_spec("torch") is not None and importlib.util.find_spec("transformers") is not None
+
+    def _ensure_clip_loaded(self) -> bool:
+        if not self._clip_preferred:
+            return False
+        if self._clip_loaded:
+            return True
+        if self._clip_failed_reason:
+            return False
+        self._try_load_clip()
+        return self._clip_loaded
 
     def _try_load_clip(self) -> None:
         try:
